@@ -439,15 +439,19 @@ const getReportHistory = (req, res) => {
 
   const sql = `
         SELECT 
-            id,
+            id_informe_log as id,
             tipo_informe as reportType,
             fecha_inicio as startDate,
             fecha_fin as endDate,
             parametros as parameters,
-            fecha_creacion as createdAt,
-            idempleado as employeeId
+            fecha_generacion as createdAt,
+            idempleado as employeeId,
+            estado as status,
+            mensaje_error as errorMessage,
+            nombre_archivo as fileName,
+            tamano_archivo as fileSize
         FROM informe_logs 
-        ORDER BY fecha_creacion DESC 
+        ORDER BY fecha_generacion DESC 
         LIMIT ? OFFSET ?
     `;
 
@@ -456,17 +460,17 @@ const getReportHistory = (req, res) => {
       console.error("Error al obtener historial de reportes:", err);
       return res.status(500).json({
         success: false,
-        message: "Error al obtener historial de reportes",
+        message: "Error al obtener historial de reportes: " + err.message,
       });
     }
 
-    // Parsear parámetros JSON
     const reports = results.map((report) => {
-      try {
-        report.parameters = report.parameters
-          ? JSON.parse(report.parameters)
-          : {};
-      } catch (e) {
+      if (report.parameters) {
+        report.parameters = {
+          descripcion: report.parameters,
+          rawData: report.parameters,
+        };
+      } else {
         report.parameters = {};
       }
       return report;
@@ -478,7 +482,16 @@ const getReportHistory = (req, res) => {
     db.query(countSql, (err, countResults) => {
       if (err) {
         console.error("Error al contar reportes:", err);
-        countResults = [{ total: reports.length }];
+        return res.json({
+          success: true,
+          reports,
+          pagination: {
+            total: reports.length,
+            limit: parseInt(limit),
+            offset: parseInt(offset),
+            hasMore: reports.length === parseInt(limit),
+          },
+        });
       }
 
       res.json({
@@ -488,6 +501,7 @@ const getReportHistory = (req, res) => {
           total: countResults[0].total,
           limit: parseInt(limit),
           offset: parseInt(offset),
+          hasMore: parseInt(offset) + reports.length < countResults[0].total,
         },
       });
     });
