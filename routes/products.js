@@ -1,42 +1,46 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 const {
-    getAllProducts,
-    createProduct,
-    getProductById,
-    updateProduct,
-    deleteProduct,
-    searchProducts,
-    getProductsByCategory,
-    getLowStockProducts,
-    getProductByCode
-} = require('../controllers/productController');
+  getAllProducts,
+  createProduct,
+  getProductById,
+  updateProduct,
+  deleteProduct,
+  searchProducts,
+  getProductsByCategory,
+  getLowStockProducts,
+  getCriticalStockProducts,
+  getProductByCode,
+} = require("../controllers/productController");
 
 // GET /api/products
-router.get('/', getAllProducts);
+router.get("/", getAllProducts);
 
 // POST /api/products
-router.post('/', createProduct);
+router.post("/", createProduct);
 
 // GET /api/products/low-stock
-router.get('/low-stock', getLowStockProducts);
+router.get("/low-stock", getLowStockProducts);
+
+// GET /api/products/critical-stock
+router.get("/critical-stock", getCriticalStockProducts);
 
 // GET /api/products/search
-router.get('/search', searchProducts);
+router.get("/search", searchProducts);
 
 // GET /api/products/category/:categoryId
-router.get('/category/:categoryId', getProductsByCategory);
+router.get("/category/:categoryId", getProductsByCategory);
 
 // GET /api/products/code/:code
-router.get('/code/:code', getProductByCode);
+router.get("/code/:code", getProductByCode);
 
 // GET /api/products/:id
-router.get('/:id', getProductById);
+router.get("/:id", getProductById);
 
 // PUT /api/products/:id
-router.put('/:id', updateProduct);
+router.put("/:id", updateProduct);
 
 // DELETE /api/products/:id
-router.delete('/:id', deleteProduct);
+router.delete("/:id", deleteProduct);
 
 module.exports = router;

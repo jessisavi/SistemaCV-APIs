@@ -1,16 +1,15 @@
 const db = require("../config/database");
 
-// Obtener todas las cotizaciones
 const getAllQuotations = (req, res) => {
   const sql = `
-        SELECT c.*, 
-               CONCAT(cl.nombre, ' ', cl.apellido) as cliente_nombre,
-               e.usuario as empleado_usuario
-        FROM cotizaciones c
-        LEFT JOIN clientes cl ON c.idcliente = cl.idcliente
-        LEFT JOIN portalempleados e ON c.idempleado = e.idempleado
-        ORDER BY c.fecha_creacion DESC
-    `;
+    SELECT c.*, 
+           CONCAT(cl.nombre, ' ', cl.apellido) as cliente_nombre,
+           e.usuario as empleado_usuario
+    FROM cotizaciones c
+    LEFT JOIN clientes cl ON c.idcliente = cl.idcliente
+    LEFT JOIN portalempleados e ON c.idempleado = e.idempleado
+    ORDER BY c.fecha_creacion DESC
+  `;
 
   db.query(sql, (err, results) => {
     if (err) {
@@ -29,16 +28,14 @@ const getAllQuotations = (req, res) => {
   });
 };
 
-// Crear nueva cotización
 const createQuotation = (req, res) => {
   const {
     idcliente,
     idempleado,
-    fecha,
+    fecha_creacion,
     valido_hasta,
     proyecto,
     notas,
-    terminos,
     subtotal,
     descuento,
     iva,
@@ -47,29 +44,28 @@ const createQuotation = (req, res) => {
     detalles,
   } = req.body;
 
-  // Validaciones básicas
-  if (!idcliente || !fecha || !valido_hasta || !total) {
+  if (!idcliente || !fecha_creacion || !valido_hasta || !total) {
     return res.status(400).json({
       success: false,
-      message: "Campos requeridos: idcliente, fecha, valido_hasta, total",
+      message:
+        "Campos requeridos: idcliente, fecha_creacion, valido_hasta, total",
     });
   }
 
   const sqlCotizacion = `
-        INSERT INTO cotizaciones 
-        (idcliente, idempleado, fecha, valido_hasta, proyecto, notas, terminos, 
-         subtotal, descuento, iva, total, estado) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
+    INSERT INTO cotizaciones 
+    (idcliente, idempleado, fecha_creacion, valido_hasta, proyecto, notas, 
+     subtotal, descuento, iva, total, estado) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `;
 
   const cotizacionParams = [
     idcliente,
     idempleado || 1,
-    fecha,
+    fecha_creacion,
     valido_hasta,
     proyecto || null,
     notas || null,
-    terminos || null,
     subtotal || 0,
     descuento || 0,
     iva || 0,
@@ -88,14 +84,13 @@ const createQuotation = (req, res) => {
 
     const cotizacionId = results.insertId;
 
-    // Insertar detalles si existen
     if (detalles && detalles.length > 0) {
       const sqlDetalle = `
-                INSERT INTO cotizacion_detalles 
-                (idcotizacion, idproducto, cantidad, precio_unitario, 
-                 descuento_porcentaje, descuento_monto, total) 
-                VALUES ?
-            `;
+        INSERT INTO cotizacion_detalles 
+        (idcotizacion, idproducto, cantidad, precio_unitario, 
+         descuento_porcentaje, descuento_monto, total) 
+        VALUES ?
+      `;
 
       const detalleValues = detalles.map((detalle) => [
         cotizacionId,
@@ -110,14 +105,12 @@ const createQuotation = (req, res) => {
       db.query(sqlDetalle, [detalleValues], (err) => {
         if (err) {
           console.error("Error al crear detalles:", err);
-          // Aún así retornamos éxito porque la cotización principal se creó
         }
 
         res.status(201).json({
           success: true,
           message: "Cotización creada correctamente",
           quotationId: cotizacionId,
-          numeroCotizacion: `COT-${cotizacionId}`,
         });
       });
     } else {
@@ -125,29 +118,27 @@ const createQuotation = (req, res) => {
         success: true,
         message: "Cotización creada correctamente",
         quotationId: cotizacionId,
-        numeroCotizacion: `COT-${cotizacionId}`,
       });
     }
   });
 };
 
-// Obtener cotización por ID
 const getQuotationById = (req, res) => {
   const { id } = req.params;
 
   const sqlCotizacion = `
-        SELECT c.*, 
-               CONCAT(cl.nombre, ' ', cl.apellido) as cliente_nombre,
-               cl.correo_electronico as cliente_email,
-               cl.celular as cliente_telefono,
-               cl.direccion as cliente_direccion,
-               cl.ciudad as cliente_ciudad,
-               e.usuario as empleado_usuario
-        FROM cotizaciones c
-        LEFT JOIN clientes cl ON c.idcliente = cl.idcliente
-        LEFT JOIN portalempleados e ON c.idempleado = e.idempleado
-        WHERE c.idcotizacion = ?
-    `;
+    SELECT c.*, 
+           CONCAT(cl.nombre, ' ', cl.apellido) as cliente_nombre,
+           cl.correo_electronico as cliente_email,
+           cl.celular as cliente_telefono,
+           cl.direccion as cliente_direccion,
+           cl.ciudad as cliente_ciudad,
+           e.usuario as empleado_usuario
+    FROM cotizaciones c
+    LEFT JOIN clientes cl ON c.idcliente = cl.idcliente
+    LEFT JOIN portalempleados e ON c.idempleado = e.idempleado
+    WHERE c.idcotizacion = ?
+  `;
 
   db.query(sqlCotizacion, [id], (err, cotizacionResults) => {
     if (err) {
@@ -167,16 +158,15 @@ const getQuotationById = (req, res) => {
 
     const cotizacion = cotizacionResults[0];
 
-    // Obtener detalles de la cotización
     const sqlDetalles = `
-            SELECT cd.*, 
-                   p.nombre as producto_nombre,
-                   p.descripcion as producto_descripcion,
-                   p.codigo as producto_codigo
-            FROM cotizacion_detalles cd
-            LEFT JOIN productos p ON cd.idproducto = p.idproducto
-            WHERE cd.idcotizacion = ?
-        `;
+      SELECT cd.*, 
+             p.nombre as producto_nombre,
+             p.descripcion as producto_descripcion,
+             p.codigo as producto_codigo
+      FROM cotizacion_detalles cd
+      LEFT JOIN productos p ON cd.idproducto = p.idproducto
+      WHERE cd.idcotizacion = ?
+    `;
 
     db.query(sqlDetalles, [id], (err, detallesResults) => {
       if (err) {
@@ -194,27 +184,19 @@ const getQuotationById = (req, res) => {
   });
 };
 
-// Actualizar cotización
 const updateQuotation = (req, res) => {
   const { id } = req.params;
-  const { proyecto, notas, terminos, valido_hasta, estado } = req.body;
+  const { proyecto, notas, valido_hasta, estado } = req.body;
 
   const sql = `
-        UPDATE cotizaciones 
-        SET proyecto = ?, notas = ?, terminos = ?, valido_hasta = ?, estado = ?
-        WHERE idcotizacion = ?
-    `;
+    UPDATE cotizaciones 
+    SET proyecto = ?, notas = ?, valido_hasta = ?, estado = ?
+    WHERE idcotizacion = ?
+  `;
 
   db.query(
     sql,
-    [
-      proyecto || null,
-      notas || null,
-      terminos || null,
-      valido_hasta,
-      estado || "PENDIENTE",
-      id,
-    ],
+    [proyecto || null, notas || null, valido_hasta, estado || "PENDIENTE", id],
     (err, results) => {
       if (err) {
         console.error("Error al actualizar cotización:", err);
@@ -239,11 +221,9 @@ const updateQuotation = (req, res) => {
   );
 };
 
-// Eliminar cotización
 const deleteQuotation = (req, res) => {
   const { id } = req.params;
 
-  // Primero eliminar detalles
   const sqlDetalles = "DELETE FROM cotizacion_detalles WHERE idcotizacion = ?";
 
   db.query(sqlDetalles, [id], (err) => {
@@ -251,7 +231,6 @@ const deleteQuotation = (req, res) => {
       console.error("Error al eliminar detalles:", err);
     }
 
-    // Luego eliminar cotización principal
     const sqlCotizacion = "DELETE FROM cotizaciones WHERE idcotizacion = ?";
 
     db.query(sqlCotizacion, [id], (err, results) => {
@@ -278,18 +257,17 @@ const deleteQuotation = (req, res) => {
   });
 };
 
-// Obtener cotizaciones por cliente
 const getQuotationsByClient = (req, res) => {
   const { clientId } = req.params;
 
   const sql = `
-        SELECT c.*,
-               CONCAT(cl.nombre, ' ', cl.apellido) as cliente_nombre
-        FROM cotizaciones c
-        LEFT JOIN clientes cl ON c.idcliente = cl.idcliente
-        WHERE c.idcliente = ?
-        ORDER BY c.fecha_creacion DESC
-    `;
+    SELECT c.*,
+           CONCAT(cl.nombre, ' ', cl.apellido) as cliente_nombre
+    FROM cotizaciones c
+    LEFT JOIN clientes cl ON c.idcliente = cl.idcliente
+    WHERE c.idcliente = ?
+    ORDER BY c.fecha_creacion DESC
+  `;
 
   db.query(sql, [clientId], (err, results) => {
     if (err) {
@@ -308,18 +286,17 @@ const getQuotationsByClient = (req, res) => {
   });
 };
 
-// Obtener cotizaciones por estado
 const getQuotationsByStatus = (req, res) => {
   const { estado } = req.params;
 
   const sql = `
-        SELECT c.*,
-               CONCAT(cl.nombre, ' ', cl.apellido) as cliente_nombre
-        FROM cotizaciones c
-        LEFT JOIN clientes cl ON c.idcliente = cl.idcliente
-        WHERE c.estado = ?
-        ORDER BY c.fecha_creacion DESC
-    `;
+    SELECT c.*,
+           CONCAT(cl.nombre, ' ', cl.apellido) as cliente_nombre
+    FROM cotizaciones c
+    LEFT JOIN clientes cl ON c.idcliente = cl.idcliente
+    WHERE c.estado = ?
+    ORDER BY c.fecha_creacion DESC
+  `;
 
   db.query(sql, [estado], (err, results) => {
     if (err) {
@@ -338,7 +315,6 @@ const getQuotationsByStatus = (req, res) => {
   });
 };
 
-// Actualizar estado de cotización
 const updateQuotationStatus = (req, res) => {
   const { id } = req.params;
   const { estado } = req.body;
@@ -375,92 +351,20 @@ const updateQuotationStatus = (req, res) => {
   });
 };
 
-// Generar PDF de cotización
-const getQuotationPDF = (req, res) => {
-  const { id } = req.params;
-
-  // Primero obtener los datos de la cotización
-  const sqlCotizacion = `
-        SELECT c.*, 
-               CONCAT(cl.nombre, ' ', cl.apellido) as cliente_nombre,
-               cl.correo_electronico as cliente_email,
-               cl.celular as cliente_telefono,
-               cl.direccion as cliente_direccion,
-               cl.ciudad as cliente_ciudad,
-               e.usuario as empleado_usuario
-        FROM cotizaciones c
-        LEFT JOIN clientes cl ON c.idcliente = cl.idcliente
-        LEFT JOIN portalempleados e ON c.idempleado = e.idempleado
-        WHERE c.idcotizacion = ?
-    `;
-
-  db.query(sqlCotizacion, [id], (err, cotizacionResults) => {
-    if (err) {
-      console.error("Error al obtener cotización para PDF:", err);
-      return res.status(500).json({
-        success: false,
-        message: "Error al generar PDF",
-      });
-    }
-
-    if (cotizacionResults.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Cotización no encontrada",
-      });
-    }
-
-    const cotizacion = cotizacionResults[0];
-
-    // Obtener detalles
-    const sqlDetalles = `
-            SELECT cd.*, 
-                   p.nombre as producto_nombre,
-                   p.codigo as producto_codigo
-            FROM cotizacion_detalles cd
-            LEFT JOIN productos p ON cd.idproducto = p.idproducto
-            WHERE cd.idcotizacion = ?
-        `;
-
-    db.query(sqlDetalles, [id], (err, detallesResults) => {
-      if (err) {
-        console.error("Error al obtener detalles para PDF:", err);
-        detallesResults = [];
-      }
-
-      // En una implementación real, aquí generarías el PDF
-      const pdfData = {
-        cotizacion: cotizacion,
-        detalles: detallesResults,
-        fechaGeneracion: new Date().toISOString(),
-        numeroDocumento: `PDF-COT-${id}`,
-      };
-
-      res.json({
-        success: true,
-        message: "Datos para generar PDF",
-        pdfData: pdfData,
-        downloadUrl: `/api/quotations/${id}/pdf/download`,
-      });
-    });
-  });
-};
-
-// Obtener detalles de una cotización
 const getQuotationDetails = (req, res) => {
   const { id } = req.params;
 
   const sql = `
-        SELECT cd.*, 
-               p.nombre as producto_nombre,
-               p.descripcion as producto_descripcion,
-               p.codigo as producto_codigo,
-               p.precio as producto_precio_actual
-        FROM cotizacion_detalles cd
-        LEFT JOIN productos p ON cd.idproducto = p.idproducto
-        WHERE cd.idcotizacion = ?
-        ORDER BY cd.id
-    `;
+    SELECT cd.*, 
+           p.nombre as producto_nombre,
+           p.descripcion as producto_descripcion,
+           p.codigo as producto_codigo,
+           p.precio as producto_precio_actual
+    FROM cotizacion_detalles cd
+    LEFT JOIN productos p ON cd.idproducto = p.idproducto
+    WHERE cd.idcotizacion = ?
+    ORDER BY cd.id_cot_det
+  `;
 
   db.query(sql, [id], (err, results) => {
     if (err) {
@@ -479,7 +383,6 @@ const getQuotationDetails = (req, res) => {
   });
 };
 
-// Agregar detalle a cotización
 const addQuotationDetail = (req, res) => {
   const { id } = req.params;
   const {
@@ -490,7 +393,6 @@ const addQuotationDetail = (req, res) => {
     descuento_monto,
   } = req.body;
 
-  // Validaciones
   if (!idproducto || !cantidad || !precio_unitario) {
     return res.status(400).json({
       success: false,
@@ -498,7 +400,6 @@ const addQuotationDetail = (req, res) => {
     });
   }
 
-  // Calcular total
   let total = cantidad * precio_unitario;
 
   if (descuento_monto && descuento_monto > 0) {
@@ -508,15 +409,14 @@ const addQuotationDetail = (req, res) => {
     total -= descuento;
   }
 
-  // Asegurar que el total no sea negativo
   total = Math.max(0, total);
 
   const sql = `
-        INSERT INTO cotizacion_detalles 
-        (idcotizacion, idproducto, cantidad, precio_unitario, 
-         descuento_porcentaje, descuento_monto, total)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    `;
+    INSERT INTO cotizacion_detalles 
+    (idcotizacion, idproducto, cantidad, precio_unitario, 
+     descuento_porcentaje, descuento_monto, total)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `;
 
   db.query(
     sql,
@@ -538,7 +438,6 @@ const addQuotationDetail = (req, res) => {
         });
       }
 
-      // Actualizar totales de la cotización
       actualizarTotalesCotizacion(id);
 
       res.status(201).json({
@@ -551,13 +450,11 @@ const addQuotationDetail = (req, res) => {
   );
 };
 
-// Actualizar detalle de cotización
 const updateQuotationDetail = (req, res) => {
   const { id, detailId } = req.params;
   const { cantidad, precio_unitario, descuento_porcentaje, descuento_monto } =
     req.body;
 
-  // Validaciones
   if (!cantidad || !precio_unitario) {
     return res.status(400).json({
       success: false,
@@ -565,7 +462,6 @@ const updateQuotationDetail = (req, res) => {
     });
   }
 
-  // Calcular nuevo total
   let total = cantidad * precio_unitario;
 
   if (descuento_monto && descuento_monto > 0) {
@@ -575,15 +471,14 @@ const updateQuotationDetail = (req, res) => {
     total -= descuento;
   }
 
-  // Asegurar que el total no sea negativo
   total = Math.max(0, total);
 
   const sql = `
-        UPDATE cotizacion_detalles 
-        SET cantidad = ?, precio_unitario = ?, 
-            descuento_porcentaje = ?, descuento_monto = ?, total = ?
-        WHERE id = ? AND idcotizacion = ?
-    `;
+    UPDATE cotizacion_detalles 
+    SET cantidad = ?, precio_unitario = ?, 
+        descuento_porcentaje = ?, descuento_monto = ?, total = ?
+    WHERE id_cot_det = ? AND idcotizacion = ?
+  `;
 
   db.query(
     sql,
@@ -612,7 +507,6 @@ const updateQuotationDetail = (req, res) => {
         });
       }
 
-      // Actualizar totales de la cotización
       actualizarTotalesCotizacion(id);
 
       res.json({
@@ -624,12 +518,11 @@ const updateQuotationDetail = (req, res) => {
   );
 };
 
-// Eliminar detalle de cotización
 const deleteQuotationDetail = (req, res) => {
   const { id, detailId } = req.params;
 
   const sql =
-    "DELETE FROM cotizacion_detalles WHERE id = ? AND idcotizacion = ?";
+    "DELETE FROM cotizacion_detalles WHERE id_cot_det = ? AND idcotizacion = ?";
 
   db.query(sql, [detailId, id], (err, results) => {
     if (err) {
@@ -647,7 +540,6 @@ const deleteQuotationDetail = (req, res) => {
       });
     }
 
-    // Actualizar totales de la cotización
     actualizarTotalesCotizacion(id);
 
     res.json({
@@ -657,15 +549,14 @@ const deleteQuotationDetail = (req, res) => {
   });
 };
 
-// Función auxiliar para actualizar totales de la cotización
 const actualizarTotalesCotizacion = (cotizacionId) => {
   const sql = `
-        SELECT 
-            COALESCE(SUM(total), 0) as subtotal,
-            COALESCE(SUM(descuento_monto), 0) as descuento_total
-        FROM cotizacion_detalles 
-        WHERE idcotizacion = ?
-    `;
+    SELECT 
+        COALESCE(SUM(total), 0) as subtotal,
+        COALESCE(SUM(descuento_monto), 0) as descuento_total
+    FROM cotizacion_detalles 
+    WHERE idcotizacion = ?
+  `;
 
   db.query(sql, [cotizacionId], (err, results) => {
     if (err) {
@@ -676,14 +567,14 @@ const actualizarTotalesCotizacion = (cotizacionId) => {
     if (results.length > 0) {
       const subtotal = results[0].subtotal;
       const descuento = results[0].descuento_total;
-      const iva = subtotal * 0.19; // 19% IVA
+      const iva = subtotal * 0.19;
       const total = subtotal + iva - descuento;
 
       const updateSql = `
-                UPDATE cotizaciones 
-                SET subtotal = ?, descuento = ?, iva = ?, total = ?
-                WHERE idcotizacion = ?
-            `;
+        UPDATE cotizaciones 
+        SET subtotal = ?, descuento = ?, iva = ?, total = ?
+        WHERE idcotizacion = ?
+      `;
 
       db.query(
         updateSql,
@@ -707,7 +598,6 @@ module.exports = {
   getQuotationsByClient,
   getQuotationsByStatus,
   updateQuotationStatus,
-  getQuotationPDF,
   getQuotationDetails,
   addQuotationDetail,
   updateQuotationDetail,

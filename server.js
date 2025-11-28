@@ -18,17 +18,28 @@ const PORT = 3000;
 app.use(cors()); // Permite peticiones desde el frontend
 app.use(express.json()); // Para parsear JSON
 
+const session = require("express-session");
+
+app.use(
+  session({
+    secret: "tu-clave-secreta",
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: false }, // Cambiar a true si usas HTTPS
+  })
+);
+
 // Rutas
 app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
+app.use("/api/usuarios", userRoutes); 
 app.use("/api/roles", roleRoutes);
-app.use("/api/clients", clientRoutes);
-app.use("/api/products", productRoutes);
-app.use("/api/categories", categoryRoutes);
-app.use("/api/suppliers", supplierRoutes);
-app.use("/api/quotations", quotationRoutes);
-app.use("/api/sales", saleRoutes);
-app.use("/api/reports", reportRoutes);
+app.use("/api/clientes", clientRoutes); 
+app.use("/api/productos", productRoutes); 
+app.use("/api/categorias", categoryRoutes); 
+app.use("/api/proveedores", supplierRoutes); 
+app.use("/api/cotizaciones", quotationRoutes); 
+app.use("/api/ventas", saleRoutes); 
+app.use("/api/informes", reportRoutes); 
 
 // Ruta de prueba
 app.get("/", (req, res) => {
@@ -59,7 +70,7 @@ app.get("/", (req, res) => {
       update: "PUT /api/clients/:id",
       delete: "DELETE /api/clients/:id",
       search: "GET /api/clients/search?term=",
-      stats: "GET /api/clients/stats/summary",
+      stats: "GET /api/clients/stats",
     },
     products: {
       all: "GET /api/products",
@@ -125,7 +136,7 @@ app.get("/", (req, res) => {
         dashboardSummary: "GET /api/reports/dashboard/summary",
         generate: "POST /api/reports/generate",
         history: "GET /api/reports/history",
-      }
+      },
     },
   });
 });

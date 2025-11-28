@@ -6,6 +6,7 @@ const {
   getSupplierById,
   updateSupplier,
   deleteSupplier,
+  searchSuppliersByName,
 } = require("../controllers/supplierController");
 
 // GET /api/suppliers
@@ -13,6 +14,9 @@ router.get("/", getAllSuppliers);
 
 // POST /api/suppliers
 router.post("/", createSupplier);
+
+// GET /api/suppliers/search/:nombre
+router.get("/search/:nombre", searchSuppliersByName);
 
 // GET /api/suppliers/:id
 router.get("/:id", getSupplierById);
