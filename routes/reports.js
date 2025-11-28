@@ -10,7 +10,6 @@ const {
   getReportHistory,
 } = require("../controllers/reportController");
 
-// Reports routes
 router.get("/sales", getSalesReport);
 router.get("/quotations", getQuotationsReport);
 router.get("/products/most-sold", getMostSoldProducts);

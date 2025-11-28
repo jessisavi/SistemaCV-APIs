@@ -1,6 +1,5 @@
 const db = require("../config/database");
 
-// Obtener reporte de ventas
 const getSalesReport = (req, res) => {
   const { startDate, endDate } = req.query;
 
@@ -42,7 +41,6 @@ const getSalesReport = (req, res) => {
       });
     }
 
-    // Obtener estadísticas adicionales
     getSalesStats(startDate, endDate, (err, stats) => {
       if (err) {
         console.error("Error al obtener estadísticas:", err);
@@ -64,7 +62,6 @@ const getSalesReport = (req, res) => {
   });
 };
 
-// Obtener estadísticas de ventas
 const getSalesStats = (startDate, endDate, callback) => {
   let sql = `
         SELECT 
@@ -92,7 +89,6 @@ const getSalesStats = (startDate, endDate, callback) => {
   });
 };
 
-// Obtener reporte de cotizaciones
 const getQuotationsReport = (req, res) => {
   const { startDate, endDate } = req.query;
 
@@ -100,13 +96,13 @@ const getQuotationsReport = (req, res) => {
         SELECT 
             c.idcotizacion,
             CONCAT('COT-', c.idcotizacion) as numero_cotizacion,
-            c.fecha,
+            c.fecha_creacion as fecha,
             c.valido_hasta,
             c.total,
             c.estado,
             CONCAT(cli.nombre, ' ', cli.apellido) as cliente,
             u.usuario as vendedor,
-            COUNT(cd.id) as cantidad_productos,
+            COUNT(cd.id_cot_det) as cantidad_productos,
             DATEDIFF(c.valido_hasta, CURDATE()) as dias_para_vencer
         FROM cotizaciones c
         LEFT JOIN clientes cli ON c.idcliente = cli.idcliente
@@ -117,13 +113,13 @@ const getQuotationsReport = (req, res) => {
   const params = [];
 
   if (startDate && endDate) {
-    sql += ` WHERE c.fecha BETWEEN ? AND ?`;
+    sql += ` WHERE c.fecha_creacion BETWEEN ? AND ?`;
     params.push(startDate, endDate);
   }
 
-  sql += ` GROUP BY c.idcotizacion, c.fecha, c.valido_hasta, c.total, c.estado, 
+  sql += ` GROUP BY c.idcotizacion, c.fecha_creacion, c.valido_hasta, c.total, c.estado, 
                      cli.nombre, cli.apellido, u.usuario
-             ORDER BY c.fecha DESC`;
+             ORDER BY c.fecha_creacion DESC`;
 
   db.query(sql, params, (err, results) => {
     if (err) {
@@ -134,7 +130,6 @@ const getQuotationsReport = (req, res) => {
       });
     }
 
-    // Obtener estadísticas de cotizaciones
     getQuotationsStats(startDate, endDate, (err, stats) => {
       if (err) {
         console.error("Error al obtener estadísticas:", err);
@@ -156,7 +151,6 @@ const getQuotationsReport = (req, res) => {
   });
 };
 
-// Obtener estadísticas de cotizaciones
 const getQuotationsStats = (startDate, endDate, callback) => {
   let sql = `
         SELECT 
@@ -173,7 +167,7 @@ const getQuotationsStats = (startDate, endDate, callback) => {
   const params = [];
 
   if (startDate && endDate) {
-    sql += ` WHERE fecha BETWEEN ? AND ?`;
+    sql += ` WHERE fecha_creacion BETWEEN ? AND ?`;
     params.push(startDate, endDate);
   }
 
@@ -183,7 +177,6 @@ const getQuotationsStats = (startDate, endDate, callback) => {
   });
 };
 
-// Obtener productos más vendidos
 const getMostSoldProducts = (req, res) => {
   const { limit = 10 } = req.query;
 
@@ -221,7 +214,6 @@ const getMostSoldProducts = (req, res) => {
   });
 };
 
-// Obtener resumen de clientes
 const getClientsSummary = (req, res) => {
   const sql = `
         SELECT 
@@ -250,7 +242,6 @@ const getClientsSummary = (req, res) => {
       });
     }
 
-    // Obtener estadísticas generales de clientes
     const statsSql = `
             SELECT 
                 COUNT(*) as total_clientes,
@@ -286,7 +277,6 @@ const getClientsSummary = (req, res) => {
   });
 };
 
-// Obtener resumen del dashboard
 const getDashboardSummary = (req, res) => {
   const today = new Date().toISOString().split("T")[0];
   const firstDayOfMonth = new Date(
@@ -296,40 +286,28 @@ const getDashboardSummary = (req, res) => {
   )
     .toISOString()
     .split("T")[0];
-  const firstDayOfYear = new Date(new Date().getFullYear(), 0, 1)
-    .toISOString()
-    .split("T")[0];
 
   const sql = `
         SELECT 
-            -- Ventas del día
             (SELECT COALESCE(SUM(total), 0) FROM ventas 
              WHERE DATE(fecha) = ? AND estado = 'COMPLETADA') as ventas_hoy,
             
-            -- Ventas del mes
             (SELECT COALESCE(SUM(total), 0) FROM ventas 
              WHERE fecha >= ? AND estado = 'COMPLETADA') as ventas_mes,
             
-            -- Ventas del año
             (SELECT COALESCE(SUM(total), 0) FROM ventas 
              WHERE YEAR(fecha) = YEAR(CURDATE()) AND estado = 'COMPLETADA') as ventas_anio,
             
-            -- Total de ventas
             (SELECT COUNT(*) FROM ventas WHERE estado = 'COMPLETADA') as total_ventas,
             
-            -- Cotizaciones pendientes
             (SELECT COUNT(*) FROM cotizaciones WHERE estado = 'PENDIENTE') as cotizaciones_pendientes,
             
-            -- Ventas pendientes
             (SELECT COUNT(*) FROM ventas WHERE estado = 'PENDIENTE') as ventas_pendientes,
             
-            -- Clientes totales
             (SELECT COUNT(*) FROM clientes) as total_clientes,
             
-            -- Productos totales
             (SELECT COUNT(*) FROM productos) as total_productos,
             
-            -- Productos con stock bajo (menos de 10 unidades)
             (SELECT COUNT(*) FROM productos WHERE stock < 10) as productos_stock_bajo
     `;
 
@@ -344,7 +322,6 @@ const getDashboardSummary = (req, res) => {
 
     const summary = results[0] || {};
 
-    // Obtener productos más vendidos recientemente
     const productsSql = `
             SELECT p.nombre, SUM(vd.cantidad) as cantidad_vendida
             FROM productos p
@@ -373,7 +350,6 @@ const getDashboardSummary = (req, res) => {
   });
 };
 
-// Generar reporte personalizado
 const generateReport = (req, res) => {
   const {
     reportType,
@@ -390,7 +366,6 @@ const generateReport = (req, res) => {
     });
   }
 
-  // Registrar la generación del reporte
   const logSql = `
         INSERT INTO informe_logs (tipo_informe, fecha_inicio, fecha_fin, parametros)
         VALUES (?, ?, ?, ?)
@@ -409,9 +384,6 @@ const generateReport = (req, res) => {
       if (err) {
         console.error("Error al registrar log de reporte:", err);
       }
-
-      // Simular generación de reporte
-      // En una implementación real, aquí se generaría el reporte según el tipo
 
       res.json({
         success: true,
@@ -433,7 +405,6 @@ const generateReport = (req, res) => {
   );
 };
 
-// Obtener historial de reportes
 const getReportHistory = (req, res) => {
   const { limit = 20, offset = 0 } = req.query;
 
@@ -466,17 +437,17 @@ const getReportHistory = (req, res) => {
 
     const reports = results.map((report) => {
       if (report.parameters) {
-        report.parameters = {
-          descripcion: report.parameters,
-          rawData: report.parameters,
-        };
+        try {
+          report.parameters = JSON.parse(report.parameters);
+        } catch (e) {
+          report.parameters = { descripcion: report.parameters };
+        }
       } else {
         report.parameters = {};
       }
       return report;
     });
 
-    // Obtener total de reportes
     const countSql = `SELECT COUNT(*) as total FROM informe_logs`;
 
     db.query(countSql, (err, countResults) => {

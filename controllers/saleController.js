@@ -1,6 +1,5 @@
 const db = require("../config/database");
 
-// Obtener todas las ventas
 const getAllSales = (req, res) => {
   const sql = `
         SELECT v.*, 
@@ -28,7 +27,6 @@ const getAllSales = (req, res) => {
   });
 };
 
-// Crear nueva venta
 const createSale = (req, res) => {
   const {
     idcliente,
@@ -44,7 +42,6 @@ const createSale = (req, res) => {
     detalles,
   } = req.body;
 
-  // Validaciones básicas
   if (!idcliente || !fecha || !metodoPago || !estado || !total) {
     return res.status(400).json({
       success: false,
@@ -52,16 +49,12 @@ const createSale = (req, res) => {
     });
   }
 
-  const connection = db;
-
-  // Generar número de factura
   const getInvoiceNumber = () => {
     return new Promise((resolve, reject) => {
       const countSql =
         "SELECT COUNT(*) as total FROM ventas WHERE YEAR(fecha_creacion) = YEAR(NOW())";
-      connection.query(countSql, (err, results) => {
+      db.query(countSql, (err, results) => {
         if (err) return reject(err);
-
         const total = results[0].total + 1;
         const invoiceNumber = `FAC-${new Date().getFullYear()}-${total
           .toString()
@@ -71,7 +64,6 @@ const createSale = (req, res) => {
     });
   };
 
-  // Insertar venta
   const insertSale = (invoiceNumber) => {
     return new Promise((resolve, reject) => {
       const saleSql = `
@@ -80,7 +72,7 @@ const createSale = (req, res) => {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `;
 
-      connection.query(
+      db.query(
         saleSql,
         [
           invoiceNumber,
@@ -103,7 +95,6 @@ const createSale = (req, res) => {
     });
   };
 
-  // Insertar detalles
   const insertDetails = (saleId) => {
     if (!detalles || !Array.isArray(detalles) || detalles.length === 0) {
       return Promise.resolve();
@@ -123,14 +114,13 @@ const createSale = (req, res) => {
     ]);
 
     return new Promise((resolve, reject) => {
-      connection.query(detailSql, [detailValues], (err, results) => {
+      db.query(detailSql, [detailValues], (err, results) => {
         if (err) return reject(err);
         resolve(results);
       });
     });
   };
 
-  // Ejecutar transacción
   getInvoiceNumber()
     .then(insertSale)
     .then(insertDetails)
@@ -149,7 +139,6 @@ const createSale = (req, res) => {
     });
 };
 
-// Obtener venta por ID
 const getSaleById = (req, res) => {
   const { id } = req.params;
 
@@ -181,7 +170,6 @@ const getSaleById = (req, res) => {
       });
     }
 
-    // Obtener detalles de la venta
     const detailsSql = `
             SELECT vd.*, p.nombre as producto_nombre, p.descripcion as producto_descripcion
             FROM venta_detalles vd
@@ -209,7 +197,6 @@ const getSaleById = (req, res) => {
   });
 };
 
-// Actualizar venta
 const updateSale = (req, res) => {
   const { id } = req.params;
   const {
@@ -269,7 +256,6 @@ const updateSale = (req, res) => {
   );
 };
 
-// Obtener venta por número de factura
 const getSaleByInvoice = (req, res) => {
   const { numeroFactura } = req.params;
 
@@ -307,7 +293,6 @@ const getSaleByInvoice = (req, res) => {
   });
 };
 
-// Obtener ventas por estado
 const getSalesByStatus = (req, res) => {
   const { estado } = req.params;
 
@@ -338,7 +323,6 @@ const getSalesByStatus = (req, res) => {
   });
 };
 
-// Actualizar estado de venta
 const updateSaleStatus = (req, res) => {
   const { id } = req.params;
   const { estado } = req.body;
@@ -375,7 +359,6 @@ const updateSaleStatus = (req, res) => {
   });
 };
 
-// Obtener detalles de venta
 const getSaleDetails = (req, res) => {
   const { id } = req.params;
 
@@ -402,7 +385,6 @@ const getSaleDetails = (req, res) => {
   });
 };
 
-// Crear detalle de venta
 const createSaleDetail = (req, res) => {
   const { id } = req.params;
   const { idproducto, cantidad, precioUnitario, total } = req.body;
@@ -440,7 +422,6 @@ const createSaleDetail = (req, res) => {
   );
 };
 
-// Actualizar detalle de venta
 const updateSaleDetail = (req, res) => {
   const { id, detailId } = req.params;
   const { cantidad, precioUnitario, total } = req.body;
