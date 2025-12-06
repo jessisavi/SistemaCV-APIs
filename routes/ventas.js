@@ -11,7 +11,7 @@ const {
   getSaleDetails,
   createSaleDetail,
   updateSaleDetail,
-} = require("../controllers/saleController");
+} = require("../controllers/ventasController");
 
 // Sales routes
 router.get("/", getAllSales);

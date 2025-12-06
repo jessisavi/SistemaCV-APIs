@@ -6,7 +6,7 @@ const {
     getRoleById,
     updateRole,
     deleteRole
-} = require('../controllers/roleController');
+} = require('../controllers/rolesController');
 
 // GET /api/roles
 router.get('/', getAllRoles);

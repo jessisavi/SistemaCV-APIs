@@ -6,7 +6,7 @@ const connection = mysql.createConnection({
   host: 'localhost',
   user: 'root',
   password: '',
-  database: 'servletsistemacv',
+  database: 'sistemaCv',
   port: 3306
 });
 

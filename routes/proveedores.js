@@ -7,7 +7,7 @@ const {
   updateSupplier,
   deleteSupplier,
   searchSuppliersByName,
-} = require("../controllers/supplierController");
+} = require("../controllers/proveedorController");
 
 // GET /api/suppliers
 router.get("/", getAllSuppliers);

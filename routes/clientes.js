@@ -8,7 +8,7 @@ const {
   deleteClient,
   searchClients,
   getClientStats,
-} = require("../controllers/clientController");
+} = require("../controllers/clientesController");
 
 // GET /api/clients
 router.get("/", getAllClients);

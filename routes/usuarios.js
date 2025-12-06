@@ -5,7 +5,7 @@ const {
     getUserById,
     updateUser,
     getUserPermissions
-} = require('../controllers/userController');
+} = require('../controllers/usuariosController');
 
 // GET /api/users
 router.get('/', getAllUsers);

@@ -12,7 +12,6 @@ const getAllCategories = (req, res) => {
       });
     }
 
-    // Mapear los resultados para coincidir con la entidad Java
     const categories = results.map((row) => ({
       idCategoria: row.idcategoria,
       nombre: row.nombre,

@@ -78,7 +78,7 @@ const createQuotation = (req, res) => {
       console.error("Error al crear cotización:", err);
       return res.status(500).json({
         success: false,
-        message: "Error al crear cotización",
+        message: "Error al crear cotización: " + err.message,
       });
     }
 
@@ -105,6 +105,10 @@ const createQuotation = (req, res) => {
       db.query(sqlDetalle, [detalleValues], (err) => {
         if (err) {
           console.error("Error al crear detalles:", err);
+          return res.status(500).json({
+            success: false,
+            message: "Cotización creada pero error en detalles: " + err.message,
+          });
         }
 
         res.status(201).json({

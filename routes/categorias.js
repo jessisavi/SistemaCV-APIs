@@ -11,7 +11,7 @@ const {
   searchCategoriesByName,
   getCategoriesWithStock,
   countProductsByCategory,
-} = require("../controllers/categoryController");
+} = require("../controllers/categoriasController");
 
 // GET /api/categories
 router.get("/", getAllCategories);

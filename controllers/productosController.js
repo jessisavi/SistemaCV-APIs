@@ -17,7 +17,6 @@ const getAllProducts = (req, res) => {
       });
     }
 
-    // Mapear resultados para consistencia
     const products = results.map((row) => ({
       idproducto: row.idproducto,
       codigo: row.codigo,

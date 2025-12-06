@@ -10,8 +10,9 @@ const {
   getProductsByCategory,
   getLowStockProducts,
   getCriticalStockProducts,
+  getOutOfStockProducts,
   getProductByCode,
-} = require("../controllers/productController");
+} = require("../controllers/productosController");
 
 // GET /api/products
 router.get("/", getAllProducts);
@@ -24,6 +25,9 @@ router.get("/low-stock", getLowStockProducts);
 
 // GET /api/products/critical-stock
 router.get("/critical-stock", getCriticalStockProducts);
+
+// GET /api/products/out-of-stock
+router.get("/out-of-stock", getOutOfStockProducts);
 
 // GET /api/products/search
 router.get("/search", searchProducts);

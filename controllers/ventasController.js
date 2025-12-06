@@ -8,7 +8,7 @@ const getAllSales = (req, res) => {
         FROM ventas v
         LEFT JOIN clientes c ON v.idcliente = c.idcliente
         LEFT JOIN portalempleados e ON v.idempleado = e.idempleado
-        ORDER BY v.fecha_creacion DESC
+        ORDER BY v.fecha DESC  -- CORRECCIÓN: La tabla tiene 'fecha', no 'fecha_creacion'
     `;
 
   db.query(sql, (err, results) => {
@@ -51,8 +51,9 @@ const createSale = (req, res) => {
 
   const getInvoiceNumber = () => {
     return new Promise((resolve, reject) => {
+      // CORRECCIÓN: La tabla tiene 'fecha', no 'fecha_creacion'
       const countSql =
-        "SELECT COUNT(*) as total FROM ventas WHERE YEAR(fecha_creacion) = YEAR(NOW())";
+        "SELECT COUNT(*) as total FROM ventas WHERE YEAR(fecha) = YEAR(NOW())";
       db.query(countSql, (err, results) => {
         if (err) return reject(err);
         const total = results[0].total + 1;
@@ -81,11 +82,11 @@ const createSale = (req, res) => {
           fecha,
           metodoPago,
           estado,
-          subtotal,
-          descuento,
-          iva,
+          subtotal || 0,
+          descuento || 0,
+          iva || 0,
           total,
-          notas,
+          notas || null,
         ],
         (err, results) => {
           if (err) return reject(err);
@@ -109,7 +110,7 @@ const createSale = (req, res) => {
       saleId,
       detalle.idproducto,
       detalle.cantidad,
-      detalle.precioUnitario,
+      detalle.precio_unitario || detalle.precioUnitario,
       detalle.total,
     ]);
 
@@ -134,7 +135,7 @@ const createSale = (req, res) => {
       console.error("Error al crear venta:", err);
       res.status(500).json({
         success: false,
-        message: "Error al crear venta",
+        message: "Error al crear venta: " + err.message,
       });
     });
 };
@@ -225,11 +226,11 @@ const updateSale = (req, res) => {
       fecha,
       metodoPago,
       estado,
-      subtotal,
-      descuento,
-      iva,
+      subtotal || 0,
+      descuento || 0,
+      iva || 0,
       total,
-      notas,
+      notas || null,
       id,
     ],
     (err, results) => {
@@ -237,7 +238,7 @@ const updateSale = (req, res) => {
         console.error("Error al actualizar venta:", err);
         return res.status(500).json({
           success: false,
-          message: "Error al actualizar venta",
+          message: "Error al actualizar venta: " + err.message,
         });
       }
 
@@ -304,7 +305,7 @@ const getSalesByStatus = (req, res) => {
         LEFT JOIN clientes c ON v.idcliente = c.idcliente
         LEFT JOIN portalempleados e ON v.idempleado = e.idempleado
         WHERE v.estado = ?
-        ORDER BY v.fecha_creacion DESC
+        ORDER BY v.fecha DESC  -- CORRECCIÓN: Usar 'fecha' en lugar de 'fecha_creacion'
     `;
 
   db.query(sql, [estado], (err, results) => {
@@ -387,9 +388,9 @@ const getSaleDetails = (req, res) => {
 
 const createSaleDetail = (req, res) => {
   const { id } = req.params;
-  const { idproducto, cantidad, precioUnitario, total } = req.body;
+  const { idproducto, cantidad, precio_unitario, total } = req.body;
 
-  if (!idproducto || !cantidad || !precioUnitario || !total) {
+  if (!idproducto || !cantidad || !precio_unitario || !total) {
     return res.status(400).json({
       success: false,
       message: "Faltan campos requeridos",
@@ -403,7 +404,7 @@ const createSaleDetail = (req, res) => {
 
   db.query(
     sql,
-    [id, idproducto, cantidad, precioUnitario, total],
+    [id, idproducto, cantidad, precio_unitario, total],
     (err, results) => {
       if (err) {
         console.error("Error al crear detalle:", err);
@@ -424,7 +425,7 @@ const createSaleDetail = (req, res) => {
 
 const updateSaleDetail = (req, res) => {
   const { id, detailId } = req.params;
-  const { cantidad, precioUnitario, total } = req.body;
+  const { cantidad, precio_unitario, total } = req.body;
 
   const sql = `
         UPDATE venta_detalles 
@@ -434,7 +435,7 @@ const updateSaleDetail = (req, res) => {
 
   db.query(
     sql,
-    [cantidad, precioUnitario, total, detailId, id],
+    [cantidad, precio_unitario, total, detailId, id],
     (err, results) => {
       if (err) {
         console.error("Error al actualizar detalle:", err);

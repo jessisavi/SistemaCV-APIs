@@ -13,7 +13,7 @@ const {
   addQuotationDetail,
   updateQuotationDetail,
   deleteQuotationDetail,
-} = require("../controllers/quotationController");
+} = require("../controllers/cotizacionesController");
 
 router.get("/", getAllQuotations);
 router.post("/", createQuotation);

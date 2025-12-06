@@ -8,7 +8,7 @@ const {
   getDashboardSummary,
   generateReport,
   getReportHistory,
-} = require("../controllers/reportController");
+} = require("../controllers/informesController");
 
 router.get("/sales", getSalesReport);
 router.get("/quotations", getQuotationsReport);
